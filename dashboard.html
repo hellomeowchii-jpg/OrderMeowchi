@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meowchi Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0A2E5C;
+    --navy2: #0d3a73;
+    --beige: #C7B18A;
+    --beige-light: #EDE3D3;
+    --charcoal: #333333;
+    --off-white: #F8F6F2;
+    --light-gray: #EAEAEA;
+    --white: #FFFFFF;
+    --green: #25D366;
+    --red: #e53e3e;
+    --orange: #dd6b20;
+    --yellow: #d69e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family:'DM Sans',sans-serif; background:var(--off-white); color:var(--charcoal); font-size:14px; }
+
+  /* NAV */
+  nav { background:var(--navy); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 16px rgba(10,46,92,0.2); }
+  .nav-left { display:flex; align-items:center; gap:12px; }
+  .nav-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:white; }
+  .nav-sub { font-size:11px; color:rgba(255,255,255,0.5); margin-top:1px; }
+  .nav-date { font-size:12px; color:var(--beige); font-weight:500; }
+  .refresh-btn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding:7px 14px; border-radius:20px; font-size:12px; cursor:pointer; transition:background 0.2s; font-family:'DM Sans',sans-serif; }
+  .refresh-btn:hover { background:rgba(255,255,255,0.18); }
+
+  /* TABS */
+  .tab-nav { background:var(--navy); padding:0 20px; display:flex; gap:4px; border-top:1px solid rgba(255,255,255,0.08); overflow-x:auto; scrollbar-width:none; }
+  .tab-nav::-webkit-scrollbar { display:none; }
+  .tab-nav-btn { flex-shrink:0; padding:12px 18px; background:none; border:none; color:rgba(255,255,255,0.5); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; white-space:nowrap; }
+  .tab-nav-btn.active { color:var(--beige); border-bottom-color:var(--beige); }
+
+  /* MAIN */
+  main { padding:20px; max-width:1200px; margin:0 auto; }
+
+  /* DATE TABS */
+  .date-tabs { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:20px; scrollbar-width:none; }
+  .date-tabs::-webkit-scrollbar { display:none; }
+  .date-tab { flex-shrink:0; padding:8px 16px; border-radius:20px; border:1.5px solid var(--light-gray); background:var(--white); color:var(--charcoal); font-size:12px; font-weight:500; cursor:pointer; transition:all 0.2s; text-align:center; }
+  .date-tab .dt-day { font-size:11px; color:#999; }
+  .date-tab.active { background:var(--navy); border-color:var(--navy); color:white; }
+  .date-tab.active .dt-day { color:rgba(255,255,255,0.6); }
+
+  /* SUMMARY CARDS */
+  .summary-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:24px; }
+  @media(min-width:600px){ .summary-grid { grid-template-columns:repeat(4,1fr); } }
+  .sum-card { background:var(--white); border:1px solid var(--light-gray); border-radius:12px; padding:14px; }
+  .sum-card.navy { background:var(--navy); border-color:var(--navy); }
+  .sum-label { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#999; margin-bottom:6px; }
+  .sum-card.navy .sum-label { color:rgba(255,255,255,0.5); }
+  .sum-val { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--navy); line-height:1; }
+  .sum-card.navy .sum-val { color:white; }
+  .sum-sub { font-size:11px; color:#aaa; margin-top:4px; }
+  .sum-card.navy .sum-sub { color:rgba(255,255,255,0.4); }
+
+  /* SLOT BAR */
+  .slot-card { background:var(--white); border:1px solid var(--light-gray); border-radius:12px; padding:16px; margin-bottom:24px; }
+  .slot-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .slot-title { font-size:13px; font-weight:500; color:var(--navy); }
+  .slot-count { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--navy); }
+  .slot-bar-bg { background:var(--light-gray); border-radius:20px; height:8px; overflow:hidden; }
+  .slot-bar-fill { height:100%; border-radius:20px; background:var(--navy); transition:width 0.5s ease; }
+  .slot-bar-fill.warning { background:var(--orange); }
+  .slot-bar-fill.full { background:var(--red); }
+  .slot-full-banner { background:#fff5f5; border:1px solid #fed7d7; border-radius:8px; padding:10px 14px; margin-top:10px; font-size:12px; color:var(--red); font-weight:500; display:none; }
+
+  /* SECTION HEADERS */
+  .sec-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; margin-top:28px; }
+  .sec-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--navy); }
+  .sec-badge { background:var(--beige-light); color:var(--navy); font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; }
+
+  /* PRODUCTION TABLE */
+  .prod-category { margin-bottom:20px; }
+  .prod-cat-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--beige); font-weight:500; margin-bottom:8px; }
+  .prod-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  @media(min-width:600px){ .prod-grid { grid-template-columns:repeat(3,1fr); } }
+  @media(min-width:900px){ .prod-grid { grid-template-columns:repeat(4,1fr); } }
+  .prod-item { background:var(--white); border:1px solid var(--light-gray); border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .prod-name { font-size:13px; color:var(--charcoal); flex:1; line-height:1.3; }
+  .prod-qty { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--navy); white-space:nowrap; }
+  .prod-unit { font-size:10px; color:#aaa; }
+
+  /* AREA SECTIONS */
+  .area-section { margin-bottom:28px; }
+  .area-header { background:var(--navy); color:white; border-radius:12px 12px 0 0; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .area-name { font-size:14px; font-weight:500; }
+  .area-count { font-size:12px; color:rgba(255,255,255,0.6); }
+  .order-cards { border:1px solid var(--light-gray); border-top:none; border-radius:0 0 12px 12px; overflow:hidden; }
+
+  /* ORDER CARD */
+  .order-card { background:var(--white); padding:14px 16px; border-bottom:1px solid var(--light-gray); transition:background 0.2s; }
+  .order-card:last-child { border-bottom:none; }
+  .order-card.done { background:#f0fff4; }
+  .order-card.done-delivery { background:#f0fff4; }
+  .order-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+  .order-name { font-size:14px; font-weight:500; color:var(--navy); }
+  .order-meta { font-size:12px; color:#888; margin-top:2px; line-height:1.4; }
+  .order-items { font-size:12px; color:var(--charcoal); margin:8px 0; line-height:1.6; }
+  .order-item-tag { display:inline-block; background:var(--beige-light); color:var(--navy); font-size:11px; padding:2px 8px; border-radius:6px; margin:2px 2px 2px 0; }
+  .order-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .action-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--light-gray); background:white; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .action-btn.prod-done { border-color:#c6f6d5; background:#f0fff4; color:#276749; }
+  .action-btn.prod-done:hover { background:#c6f6d5; }
+  .action-btn.delivery-done { border-color:#bee3f8; background:#ebf8ff; color:#2b6cb0; }
+  .action-btn.delivery-done:hover { background:#bee3f8; }
+  .action-btn.wa-btn { border-color:#c6f6d5; background:white; color:#276749; }
+  .action-btn.wa-btn:hover { background:#f0fff4; }
+  .status-badges { display:flex; gap:6px; flex-wrap:wrap; }
+  .status-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:500; }
+  .badge-pending-prod { background:#fff3cd; color:#856404; }
+  .badge-done-prod { background:#d4edda; color:#155724; }
+  .badge-pending-del { background:#cce5ff; color:#004085; }
+  .badge-done-del { background:#d4edda; color:#155724; }
+  .badge-pickup { background:var(--beige-light); color:var(--navy); }
+  .maps-link { color:var(--navy); font-size:11px; text-decoration:none; border-bottom:1px dotted var(--beige); }
+  .maps-link:hover { color:var(--beige); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align:center; padding:40px 20px; color:#bbb; }
+  .empty-state .emoji { font-size:36px; margin-bottom:10px; }
+
+  /* LOADING */
+  .loading { text-align:center; padding:40px; color:#aaa; }
+  .spinner { width:32px; height:32px; border:3px solid var(--light-gray); border-top-color:var(--navy); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* PANEL */
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* NOTES */
+  .order-notes { font-size:12px; color:#888; font-style:italic; margin-top:4px; }
+
+  /* TOTAL PRICE BADGE */
+  .total-badge { font-size:12px; font-weight:600; color:var(--navy); background:var(--beige-light); padding:3px 10px; border-radius:20px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div>
+      <div class="nav-title">🐱 Meowchi Dashboard</div>
+      <div class="nav-sub">Kitchen & Driver Operations</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="nav-date" id="nav-date"></span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</nav>
+
+<div class="tab-nav">
+  <button class="tab-nav-btn active" onclick="switchPanel('ringkasan',this)">📊 Ringkasan</button>
+  <button class="tab-nav-btn" onclick="switchPanel('produksi',this)">👨‍🍳 Produksi</button>
+  <button class="tab-nav-btn" onclick="switchPanel('delivery',this)">🚚 Delivery</button>
+  <button class="tab-nav-btn" onclick="switchPanel('pickup',this)">🏠 Self Pickup</button>
+  <button class="tab-nav-btn" onclick="switchPanel('semua',this)">📋 Semua Pesanan</button>
+</div>
+
+<main>
+  <!-- DATE TABS -->
+  <div class="date-tabs" id="date-tabs"></div>
+
+  <!-- RINGKASAN -->
+  <div class="panel active" id="panel-ringkasan">
+    <div class="summary-grid" id="summary-grid">
+      <div class="loading"><div class="spinner"></div>Memuat data...</div>
+    </div>
+    <div class="slot-card" id="slot-card" style="display:none;">
+      <div class="slot-header">
+        <span class="slot-title">🚚 Kapasitas Delivery Hari Ini</span>
+        <span class="slot-count" id="slot-count">0 / 40</span>
+      </div>
+      <div class="slot-bar-bg"><div class="slot-bar-fill" id="slot-bar" style="width:0%"></div></div>
+      <div class="slot-full-banner" id="slot-full">⚠️ Slot delivery penuh! Pesanan baru dijadwalkan ke hari berikutnya.</div>
+    </div>
+  </div>
+
+  <!-- PRODUKSI -->
+  <div class="panel" id="panel-produksi">
+    <div class="sec-header">
+      <span class="sec-title">Rekap Produksi</span>
+      <span class="sec-badge" id="prod-badge">0 item</span>
+    </div>
+    <div id="prod-content"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+
+  <!-- DELIVERY -->
+  <div class="panel" id="panel-delivery">
+    <div class="sec-header">
+      <span class="sec-title">Delivery per Area</span>
+      <span class="sec-badge" id="delivery-badge">0 alamat</span>
+    </div>
+    <div id="delivery-content"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+
+  <!-- PICKUP -->
+  <div class="panel" id="panel-pickup">
+    <div class="sec-header">
+      <span class="sec-title">Self Pickup</span>
+      <span class="sec-badge" id="pickup-badge">0 pesanan</span>
+    </div>
+    <div id="pickup-content"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+
+  <!-- SEMUA -->
+  <div class="panel" id="panel-semua">
+    <div class="sec-header">
+      <span class="sec-title">Semua Pesanan</span>
+      <span class="sec-badge" id="semua-badge">0</span>
+    </div>
+    <div id="semua-content"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+</main>
+
+<script>
+const SUPA_URL = 'https://uhwwfyikassoxdvhrdnb.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVod3dmeWlrYXNzb3hkdmhyZG5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzY2MDIsImV4cCI6MjA5NzIxMjYwMn0.a-fIRN729Q_B7ZmVBZIZzoFiGKrCEVG2k30wnF74B8M';
+
+const AREAS = ['Asyir', "Sabi'", 'Gamaliya – Buuts', 'Darb Ahmar – Aslan'];
+const MENU_CATS = {
+  'Mochi Cream': ['Tiramisu Mochi Cream','Durian Mochi Cream','Blueberry Mochi Cream','Chocolate Mochi Cream','Oreo Mochi Cream'],
+  'Mochi Bites': ['Chocoreo Mochi Bites','Blueberry Mochi Bites','Vanilla Mochi Bites','Durian Mochi Bites','Mix Bites'],
+  'Dimsum': ['Dimsum Original','Dimsum Mentai','Dimsum Katsuobushi','Dimsum Cheese','Dimsum Mix','Party Box (16 pcs)','Family Box (26 pcs)'],
+  'Mentai Rice': ['Mentai Rice Crabstick','Mentai Rice Chicken Strip','Mentai Rice Smoked Beef','Mentai Rice Tuna'],
+  'Bundle': ['Paket Nyam-Nyam','Paket Meowlicious']
+};
+
+let allOrders = [];
+let selectedDate = '';
+let availableDates = [];
+
+// ── INIT ──
+function init() {
+  const now = new Date();
+  document.getElementById('nav-date').textContent = formatDisplayDate(now);
+  loadAll();
+}
+
+async function loadAll() {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/orders?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    });
+    allOrders = await res.json();
+    if (!Array.isArray(allOrders)) { allOrders = []; }
+    buildDateTabs();
+    renderAll();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('summary-grid').innerHTML = '<div class="empty-state"><div class="emoji">⚠️</div>Gagal memuat data. Cek koneksi internet.</div>';
+  }
+}
+
+// ── DATE TABS ──
+function buildDateTabs() {
+  const dates = [...new Set(allOrders.map(o => o.delivery_date))].sort();
+  availableDates = dates;
+
+  // Default to today or nearest date
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (!selectedDate || !dates.includes(selectedDate)) {
+    selectedDate = dates.includes(todayStr) ? todayStr : (dates[0] || todayStr);
+  }
+
+  const container = document.getElementById('date-tabs');
+  if (dates.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:#aaa;padding:8px 0;">Belum ada pesanan</div>';
+    return;
+  }
+
+  container.innerHTML = dates.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const dayNames = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const label = `${dt.getDate()} ${months[dt.getMonth()]}`;
+    const day = dayNames[dt.getDay()];
+    const count = allOrders.filter(o => o.delivery_date === d).length;
+    return `<div class="date-tab ${d === selectedDate ? 'active' : ''}" onclick="selectDate('${d}',this)">
+      <div>${label}</div>
+      <div class="dt-day">${day} · ${count} order</div>
+    </div>`;
+  }).join('');
+}
+
+function selectDate(date, el) {
+  selectedDate = date;
+  document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+
+function getFilteredOrders() {
+  return allOrders.filter(o => o.delivery_date === selectedDate);
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderRingkasan();
+  renderProduksi();
+  renderDelivery();
+  renderPickup();
+  renderSemua();
+}
+
+// ── RINGKASAN ──
+function renderRingkasan() {
+  const orders = getFilteredOrders();
+  const delivery = orders.filter(o => o.method === 'delivery');
+  const pickup = orders.filter(o => o.method === 'pickup');
+  const totalItems = orders.reduce((s, o) => s + (o.items || []).reduce((ss, i) => ss + i.qty, 0), 0);
+
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="sum-card navy">
+      <div class="sum-label">Total Pesanan</div>
+      <div class="sum-val">${orders.length}</div>
+      <div class="sum-sub">${selectedDate ? formatShortDate(selectedDate) : ''}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Delivery</div>
+      <div class="sum-val">${delivery.length}</div>
+      <div class="sum-sub">${delivery.length} alamat</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Self Pickup</div>
+      <div class="sum-val">${pickup.length}</div>
+      <div class="sum-sub">di House of Meowchi</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Total Item</div>
+      <div class="sum-val">${totalItems}</div>
+      <div class="sum-sub">semua kategori</div>
+    </div>
+  `;
+
+  // Slot bar
+  const slotCard = document.getElementById('slot-card');
+  const slotCount = document.getElementById('slot-count');
+  const slotBar = document.getElementById('slot-bar');
+  const slotFull = document.getElementById('slot-full');
+  slotCard.style.display = 'block';
+  const pct = Math.min((delivery.length / 40) * 100, 100);
+  slotCount.textContent = `${delivery.length} / 40`;
+  slotBar.style.width = pct + '%';
+  slotBar.className = 'slot-bar-fill' + (pct >= 100 ? ' full' : pct >= 75 ? ' warning' : '');
+  slotFull.style.display = delivery.length >= 40 ? 'block' : 'none';
+}
+
+// ── PRODUKSI ──
+function renderProduksi() {
+  const orders = getFilteredOrders();
+  if (orders.length === 0) {
+    document.getElementById('prod-content').innerHTML = '<div class="empty-state"><div class="emoji">📭</div>Tidak ada pesanan pada tanggal ini</div>';
+    document.getElementById('prod-badge').textContent = '0 item';
+    return;
+  }
+
+  // Count all items
+  const counts = {};
+  orders.forEach(o => {
+    (o.items || []).forEach(item => {
+      const key = item.name + (item.variant ? ' (' + item.variant + ')' : '');
+      counts[key] = (counts[key] || 0) + item.qty;
+    });
+  });
+
+  const totalUnique = Object.keys(counts).length;
+  document.getElementById('prod-badge').textContent = totalUnique + ' jenis';
+
+  let html = '';
+  Object.entries(MENU_CATS).forEach(([cat, items]) => {
+    const catItems = [];
+    // Check items in this category
+    Object.entries(counts).forEach(([key, qty]) => {
+      const baseName = items.find(i => key.startsWith(i));
+      if (baseName) catItems.push({ key, qty });
+    });
+    // Also check variant-based
+    if (catItems.length === 0) return;
+
+    html += `<div class="prod-category">
+      <div class="prod-cat-title">${cat}</div>
+      <div class="prod-grid">`;
+    catItems.forEach(({ key, qty }) => {
+      html += `<div class="prod-item">
+        <div class="prod-name">${key}</div>
+        <div style="text-align:right">
+          <div class="prod-qty">${qty}</div>
+          <div class="prod-unit">porsi</div>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  // Items not in any category
+  const uncategorized = Object.entries(counts).filter(([key]) => {
+    return !Object.values(MENU_CATS).flat().some(m => key.startsWith(m));
+  });
+  if (uncategorized.length > 0) {
+    html += `<div class="prod-category"><div class="prod-cat-title">Lainnya</div><div class="prod-grid">`;
+    uncategorized.forEach(([key, qty]) => {
+      html += `<div class="prod-item"><div class="prod-name">${key}</div><div style="text-align:right"><div class="prod-qty">${qty}</div><div class="prod-unit">porsi</div></div></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('prod-content').innerHTML = html;
+}
+
+// ── DELIVERY ──
+function renderDelivery() {
+  const orders = getFilteredOrders().filter(o => o.method === 'delivery');
+  document.getElementById('delivery-badge').textContent = orders.length + ' alamat';
+
+  if (orders.length === 0) {
+    document.getElementById('delivery-content').innerHTML = '<div class="empty-state"><div class="emoji">🚚</div>Tidak ada pesanan delivery hari ini</div>';
+    return;
+  }
+
+  let html = '';
+  AREAS.forEach(area => {
+    const areaOrders = orders.filter(o => o.area === area);
+    if (areaOrders.length === 0) return;
+    html += `<div class="area-section">
+      <div class="area-header">
+        <span class="area-name">📍 ${area}</span>
+        <span class="area-count">${areaOrders.length} alamat</span>
+      </div>
+      <div class="order-cards">`;
+    areaOrders.forEach(o => { html += buildOrderCard(o, 'delivery'); });
+    html += `</div></div>`;
+  });
+
+  // Orders with unknown area
+  const unknownArea = orders.filter(o => !AREAS.includes(o.area));
+  if (unknownArea.length > 0) {
+    html += `<div class="area-section">
+      <div class="area-header"><span class="area-name">📍 Area Lain</span><span class="area-count">${unknownArea.length} alamat</span></div>
+      <div class="order-cards">`;
+    unknownArea.forEach(o => { html += buildOrderCard(o, 'delivery'); });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('delivery-content').innerHTML = html;
+  attachStatusHandlers('delivery-content');
+}
+
+// ── PICKUP ──
+function renderPickup() {
+  const orders = getFilteredOrders().filter(o => o.method === 'pickup');
+  document.getElementById('pickup-badge').textContent = orders.length + ' pesanan';
+
+  if (orders.length === 0) {
+    document.getElementById('pickup-content').innerHTML = '<div class="empty-state"><div class="emoji">🏠</div>Tidak ada self pickup hari ini</div>';
+    return;
+  }
+
+  const html = `<div class="order-cards" style="border:1px solid var(--light-gray);border-radius:12px;overflow:hidden;">
+    ${orders.map(o => buildOrderCard(o, 'pickup')).join('')}
+  </div>`;
+  document.getElementById('pickup-content').innerHTML = html;
+  attachStatusHandlers('pickup-content');
+}
+
+// ── SEMUA ──
+function renderSemua() {
+  const orders = getFilteredOrders();
+  document.getElementById('semua-badge').textContent = orders.length + ' pesanan';
+
+  if (orders.length === 0) {
+    document.getElementById('semua-content').innerHTML = '<div class="empty-state"><div class="emoji">📭</div>Tidak ada pesanan</div>';
+    return;
+  }
+
+  const html = `<div class="order-cards" style="border:1px solid var(--light-gray);border-radius:12px;overflow:hidden;">
+    ${orders.map(o => buildOrderCard(o, 'all')).join('')}
+  </div>`;
+  document.getElementById('semua-content').innerHTML = html;
+  attachStatusHandlers('semua-content');
+}
+
+// ── ORDER CARD BUILDER ──
+function buildOrderCard(o, context) {
+  const isProdDone = o.status_production === 'done';
+  const isDelDone = o.status_delivery === 'done';
+  const isDone = isProdDone && isDelDone;
+
+  const itemsHtml = (o.items || []).map(i =>
+    `<span class="order-item-tag">${i.name}${i.variant ? ' ('+i.variant+')' : ''} ×${i.qty}</span>`
+  ).join('');
+
+  const prodBadge = `<span class="status-badge ${isProdDone ? 'badge-done-prod' : 'badge-pending-prod'}">${isProdDone ? '✓ Diproduksi' : '⏳ Belum Produksi'}</span>`;
+  const delBadge = o.method === 'delivery'
+    ? `<span class="status-badge ${isDelDone ? 'badge-done-del' : 'badge-pending-del'}">${isDelDone ? '✓ Dikirim' : '⏳ Belum Dikirim'}</span>`
+    : `<span class="status-badge badge-pickup">${isDelDone ? '✓ Diambil' : '⏳ Belum Diambil'}</span>`;
+
+  const mapsBtn = o.maps_link ? `<a href="${o.maps_link}" target="_blank" class="maps-link">🗺️ Buka Maps</a>` : '';
+  const waBtn = `<button class="action-btn wa-btn" onclick="window.open('https://wa.me/${o.customer_phone || ''}','_blank')">💬 WA</button>`;
+
+  const prodBtn = `<button class="action-btn ${isProdDone ? 'prod-done' : ''}" onclick="updateStatus('${o.id}','production','${isProdDone ? 'pending' : 'done'}')">
+    ${isProdDone ? '✓ Produksi Selesai' : '☐ Tandai Diproduksi'}
+  </button>`;
+
+  const delBtn = `<button class="action-btn ${isDelDone ? 'delivery-done' : ''}" onclick="updateStatus('${o.id}','delivery','${isDelDone ? 'pending' : 'done'}')">
+    ${o.method === 'delivery' ? (isDelDone ? '✓ Sudah Dikirim' : '☐ Tandai Dikirim') : (isDelDone ? '✓ Sudah Diambil' : '☐ Tandai Diambil')}
+  </button>`;
+
+  return `<div class="order-card ${isDone ? 'done' : ''}" id="card-${o.id}">
+    <div class="order-top">
+      <div>
+        <div class="order-name">${o.customer_name}</div>
+        <div class="order-meta">
+          ${o.method === 'delivery' ? `📍 ${o.area || '-'} · ${o.address || ''}` : '🏠 Self Pickup' + (o.pickup_time ? ' · ' + o.pickup_time : '')}
+          ${mapsBtn ? '<br>' + mapsBtn : ''}
+        </div>
+      </div>
+      <div class="status-badges">${prodBadge}${delBadge}</div>
+    </div>
+    <div class="order-items">${itemsHtml}</div>
+    ${o.notes ? `<div class="order-notes">📝 ${o.notes}</div>` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+      <span class="total-badge">Total: ${o.total} LE</span>
+      <span style="font-size:11px;color:#bbb;">${formatTime(o.created_at)}</span>
+    </div>
+    <div class="order-actions">${prodBtn}${delBtn}</div>
+  </div>`;
+}
+
+// ── STATUS UPDATE ──
+async function updateStatus(id, type, newStatus) {
+  const field = type === 'production' ? 'status_production' : 'status_delivery';
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/orders?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ [field]: newStatus })
+    });
+    if (res.ok) {
+      const order = allOrders.find(o => o.id === id);
+      if (order) order[field] = newStatus;
+      renderAll();
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ── STATUS HANDLER ──
+function attachStatusHandlers(containerId) {
+  // Handlers are inline onclick, no need for delegation
+}
+
+// ── PANEL SWITCH ──
+function switchPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── HELPERS ──
+function formatDisplayDate(dt) {
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${days[dt.getDay()]}, ${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+function formatShortDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  const dt = new Date(ts);
+  return dt.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+}
+
+init();
+</script>
+</body>
+</html>
